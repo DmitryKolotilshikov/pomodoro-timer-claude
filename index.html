@@ -220,6 +220,40 @@ button.reset:hover { border-color: var(--muted); color: var(--fg); background: v
 .count { margin-top: 1.375rem; color: var(--muted); font-size: .8rem; letter-spacing: .08em; }
 .count::before { content: "> "; color: var(--accent); }
 
+/* ---------- Игра ---------- */
+.game {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(.375rem);
+  -webkit-backdrop-filter: blur(.375rem);
+}
+.game[hidden] { display: none; }
+.game-box {
+  width: 100%;
+  max-width: 40rem;
+  padding: 1.25rem 1.5rem;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  clip-path: polygon(1.25rem 0, 100% 0, 100% calc(100% - 1.25rem), calc(100% - 1.25rem) 100%, 0 100%, 0 1.25rem);
+  transition: border-color .6s;
+}
+.game-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+.game-score {
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent);
+}
+.game canvas { display: block; width: 100%; height: auto; cursor: pointer; touch-action: manipulation; }
+.game-hint { margin-top: .75rem; color: var(--muted); font-size: .8rem; letter-spacing: .08em; text-align: center; }
+
 /* Для тех, у кого в системе отключена анимация */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; }
@@ -250,10 +284,24 @@ button.reset:hover { border-color: var(--muted); color: var(--fg); background: v
     <button class="primary" id="start">Старт</button>
     <button id="pause" disabled>Пауза</button>
     <button class="reset" id="reset">Сброс</button>
+    <button id="game-open">Игра</button>
   </div>
   <div class="count" id="count">Завершено помидоров: 0</div>
 </main>
 
+<!-- Мини-игра «Блоха»: открывается кнопкой «Игра», таймер при этом продолжает идти -->
+<div class="game" id="game" hidden>
+  <div class="game-box">
+    <div class="game-head">
+      <span class="game-score" id="game-score">0</span>
+      <button class="reset" id="game-close" aria-label="Закрыть игру">✕</button>
+    </div>
+    <canvas id="game-canvas" width="600" height="160"></canvas>
+    <div class="game-hint">Пробел / ↑ / тап — прыжок · Esc — закрыть</div>
+  </div>
+</div>
+
 <script src="script.js"></script>
+<script src="game.js"></script>
 </body>
 </html>

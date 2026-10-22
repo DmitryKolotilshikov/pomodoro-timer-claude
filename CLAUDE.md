@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Кольцо прогресса** — SVG `<circle class="progress" pathLength="100">`: длина окружности условно 100 при любом радиусе, поэтому `stroke-dasharray: 100`, а `--offset = 100 * (1 - доля оставшегося)`.
 - **Звук** — синтез через Web Audio API (`playNotes`), без аудиофайлов. `AudioContext` создаётся лениво по клику «Старт» из-за autoplay-политики браузеров.
 - Учитывается `prefers-reduced-motion` (в `<style>` в `index.html`).
+- **Мини-игра «Блоха»** — отдельный `game.js` (обёрнут в IIFE, т.к. `script.js` тоже классический скрипт с глобальными именами), canvas в оверлее `#game`, открывается кнопкой «Игра». С таймером состояние не делит: цвет каждый кадр читается из `--accent`, поэтому игра перекрашивается вместе с режимом. Рекорд — `localStorage['flea-best']`.
 
 ## Exchange rates: архитектура
 
