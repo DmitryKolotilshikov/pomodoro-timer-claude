@@ -242,7 +242,10 @@ button.reset:hover { border-color: var(--muted); color: var(--fg); background: v
   clip-path: polygon(1.25rem 0, 100% 0, 100% calc(100% - 1.25rem), calc(100% - 1.25rem) 100%, 0 100%, 0 1.25rem);
   transition: border-color .6s;
 }
-.game-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+.game-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+/* Выбор персонажа: выбранный подсвечен как primary-кнопка */
+.game-chars { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+.game-chars button[aria-pressed="true"] { background: var(--accent); color: var(--bg); text-shadow: none; }
 .game-score {
   font-size: .95rem;
   font-weight: 700;
@@ -294,10 +297,15 @@ button.reset:hover { border-color: var(--muted); color: var(--fg); background: v
   <div class="game-box">
     <div class="game-head">
       <span class="game-score" id="game-score">0</span>
+      <div class="game-chars" id="game-chars" role="group" aria-label="Персонаж">
+        <button data-char="flea">Блоха</button>
+        <button data-char="tick">Клещ</button>
+        <button data-char="hopper">Кузнечик</button>
+      </div>
       <button class="reset" id="game-close" aria-label="Закрыть игру">✕</button>
     </div>
     <canvas id="game-canvas" width="600" height="160"></canvas>
-    <div class="game-hint">Пробел / ↑ / тап — прыжок · Esc — закрыть</div>
+    <div class="game-hint">Пробел / ↑ / тап — прыжок · 1–3 — персонаж · Esc — закрыть</div>
   </div>
 </div>
 
