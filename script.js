@@ -13,9 +13,6 @@ const els = {
   count: document.getElementById('count'),
 };
 
-const CIRCUMFERENCE = 2 * Math.PI * 45;
-els.progress.style.strokeDasharray = CIRCUMFERENCE;
-
 let mode = 'work';
 let remainingMs = MODES.work.seconds * 1000;
 let endsAt = null;   // timestamp конца отрезка, когда таймер идёт
@@ -65,9 +62,10 @@ function render() {
   const text = format(remainingMs);
   els.time.textContent = text;
   els.mode.textContent = cfg.label;
-  document.documentElement.style.setProperty('--accent', cfg.color);
   const fraction = remainingMs / (cfg.seconds * 1000);
-  els.progress.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
+  const root = document.documentElement.style;
+  root.setProperty('--accent', cfg.color);
+  root.setProperty('--offset', 100 * (1 - fraction));  // длина кольца = pathLength 100
   els.count.textContent = `Завершено помидоров: ${completed}`;
   document.title = `${text} · ${cfg.label}`;
 

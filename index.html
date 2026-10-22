@@ -4,7 +4,227 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pomodoro</title>
-<link rel="stylesheet" href="style.css">
+<style>
+:root {
+  --work: #ff2a6d;      /* неоновый розовый */
+  --break: #05d9e8;     /* неоновый циан */
+  --accent: var(--work);
+  --offset: 0;          /* stroke-dashoffset кольца, выставляет render() */
+  --violet: #7b2cbf;
+  --bg: #07060f;
+  --fg: #e8f6ff;
+  --muted: #7a7f9a;
+  --white: #fff;
+  --reset-border: #4a4d5e;
+  --scanline: rgba(255, 255, 255, .035);
+  --reset-hover-bg: rgba(255, 255, 255, .04);
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+
+/* ---------- Фон ---------- */
+.bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+/* Большие размытые пятна медленно плывут и перетекают друг в друга */
+.blob {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(5rem);
+  opacity: .35;
+  mix-blend-mode: screen;
+  animation: drift 32s ease-in-out infinite alternate;
+}
+.blob-1 { background: radial-gradient(circle, var(--work), transparent 65%); top: -20vmax; left: -15vmax; }
+.blob-2 { background: radial-gradient(circle, var(--break), transparent 65%); bottom: -25vmax; right: -15vmax; animation-duration: 38s; animation-delay: -12s; }
+.blob-3 { background: radial-gradient(circle, var(--violet), transparent 65%); top: 20vh; left: 25vw; animation-duration: 44s; animation-delay: -24s; }
+
+@keyframes drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(12vw, 8vh) scale(1.15); }
+  66%  { transform: translate(-6vw, 14vh) scale(.9); }
+  100% { transform: translate(8vw, -10vh) scale(1.05); }
+}
+
+/* Сетка-«пол» уходит в перспективу и медленно едет.
+   Толщина линий в px — это те же рамки, в rem 1px размывается. */
+.grid {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: -10vh;
+  height: 60vh;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--break) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--work) 30%, transparent) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  transform: perspective(18.75rem) rotateX(60deg);
+  transform-origin: bottom;
+  /* для маски важна только прозрачность, цвет любой непрозрачный */
+  mask-image: linear-gradient(to top, var(--bg) 10%, transparent 90%);
+  -webkit-mask-image: linear-gradient(to top, var(--bg) 10%, transparent 90%);
+  animation: grid-move 6s linear infinite;
+}
+@keyframes grid-move { to { background-position: 0 3rem; } }
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, var(--scanline) 0 1px, transparent 1px 3px);
+}
+
+/* ---------- Панель ---------- */
+.panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 23.75rem;
+  padding: 2rem 1.5rem 1.75rem;
+  text-align: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  backdrop-filter: blur(.375rem);
+  -webkit-backdrop-filter: blur(.375rem);
+  clip-path: polygon(1.25rem 0, 100% 0, 100% calc(100% - 1.25rem), calc(100% - 1.25rem) 100%, 0 100%, 0 1.25rem);
+  transition: border-color .6s;
+}
+/* Неоновые уголки-скобки */
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid var(--accent);
+  filter: drop-shadow(0 0 4px var(--accent));
+  transition: border-color .6s;
+}
+.panel::before { top: .5rem; right: .5rem; border-left: none; border-bottom: none; }
+.panel::after  { bottom: .5rem; left: .5rem; border-right: none; border-top: none; }
+
+.mode {
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent);
+  transition: color .6s;
+  animation: flicker 7s infinite;
+}
+.mode::before { content: "// "; opacity: .6; }
+@keyframes flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: .4; }
+  94% { opacity: 1; }
+  96% { opacity: .6; }
+}
+
+/* ---------- Кольцо ---------- */
+.ring { position: relative; width: 16.25rem; max-width: 100%; aspect-ratio: 1; margin: 1.5rem auto; }
+.ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+.ring circle { fill: none; }
+.ticks {
+  stroke: color-mix(in srgb, var(--accent) 50%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: .6 2.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spin 90s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.track { stroke: color-mix(in srgb, var(--accent) 15%, transparent); stroke-width: 3; }
+/* У круга pathLength="100", поэтому длина окружности всегда 100 — не зависит от радиуса */
+.progress {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: square;
+  stroke-dasharray: 100;
+  stroke-dashoffset: var(--offset);
+  transition: stroke .6s, stroke-dashoffset .25s linear;
+}
+/* Пока таймер идёт, свечение кольца мягко «дышит» */
+body.running .ring svg { animation: breathe 4s ease-in-out infinite; }
+@keyframes breathe {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--accent)); }
+  50%      { filter: drop-shadow(0 0 14px var(--accent)); }
+}
+
+.time {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 3.6rem;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  /* лёгкая хроматическая аберрация */
+  text-shadow:
+    -2px 0 color-mix(in srgb, var(--work) 70%, transparent),
+     2px 0 color-mix(in srgb, var(--break) 70%, transparent),
+     0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* ---------- Кнопки ---------- */
+/* Высоту задают одинаковые font-size и padding у всех кнопок — не переопределять */
+.buttons { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+button {
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  padding: .75rem 1.375rem;
+  border: 1px solid var(--accent);
+  border-radius: .5rem;  /* 8px */
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
+  cursor: pointer;
+  transition: background .25s, color .25s, border-color .6s;
+}
+button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+button.primary { background: var(--accent); color: var(--bg); text-shadow: none; }
+button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 80%, var(--white)); }
+button:disabled { opacity: .3; cursor: default; }
+
+/* Сброс — серая кнопка с пунктиром, без неона */
+button.reset {
+  border: 1px dashed var(--reset-border);
+  background: transparent;
+  color: var(--muted);
+  text-shadow: none;
+  font-weight: 400;
+}
+button.reset:hover { border-color: var(--muted); color: var(--fg); background: var(--reset-hover-bg); }
+
+.count { margin-top: 1.375rem; color: var(--muted); font-size: .8rem; letter-spacing: .08em; }
+.count::before { content: "> "; color: var(--accent); }
+
+/* Для тех, у кого в системе отключена анимация */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+}
+</style>
 </head>
 <body>
 <!-- Фон: перетекающие неоновые пятна, сетка-«пол» и сканлайны -->
@@ -22,7 +242,7 @@
     <svg viewBox="0 0 100 100">
       <circle class="ticks" cx="50" cy="50" r="49"></circle>
       <circle class="track" cx="50" cy="50" r="44"></circle>
-      <circle class="progress" id="progress" cx="50" cy="50" r="44"></circle>
+      <circle class="progress" id="progress" cx="50" cy="50" r="44" pathLength="100"></circle>
     </svg>
     <div class="time" id="time">25:00</div>
   </div>
