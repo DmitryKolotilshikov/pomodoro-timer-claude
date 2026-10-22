@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pomodoro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- Фон: перетекающие неоновые пятна, сетка-«пол» и сканлайны -->
+<div class="bg" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="grid"></div>
+  <div class="scanlines"></div>
+</div>
+
+<main class="panel">
+  <div class="mode" id="mode">Работа</div>
+  <div class="ring">
+    <svg viewBox="0 0 100 100">
+      <circle class="ticks" cx="50" cy="50" r="49"></circle>
+      <circle class="track" cx="50" cy="50" r="44"></circle>
+      <circle class="progress" id="progress" cx="50" cy="50" r="44"></circle>
+    </svg>
+    <div class="time" id="time">25:00</div>
+  </div>
+  <div class="buttons">
+    <button class="primary" id="start">Старт</button>
+    <button id="pause" disabled>Пауза</button>
+    <button class="reset" id="reset">Сброс</button>
+  </div>
+  <div class="count" id="count">Завершено помидоров: 0</div>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
