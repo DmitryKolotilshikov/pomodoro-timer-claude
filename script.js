@@ -10,6 +10,7 @@ const els = {
   start: document.getElementById('start'),
   pause: document.getElementById('pause'),
   reset: document.getElementById('reset'),
+  color: document.getElementById('color'),
   count: document.getElementById('count'),
 };
 
@@ -18,6 +19,7 @@ let remainingMs = MODES.work.seconds * 1000;
 let endsAt = null;   // timestamp конца отрезка, когда таймер идёт
 let tickId = null;
 let completed = 0;
+let customColor = null;  // случайный цвет с кнопки «Цвет»; null — цвет текущего режима
 let audioCtx = null;
 
 // Звуки через Web Audio API — без аудиофайлов.
@@ -64,7 +66,7 @@ function render() {
   els.mode.textContent = cfg.label;
   const fraction = remainingMs / (cfg.seconds * 1000);
   const root = document.documentElement.style;
-  root.setProperty('--accent', cfg.color);
+  root.setProperty('--accent', customColor ?? cfg.color);
   root.setProperty('--offset', 100 * (1 - fraction));  // длина кольца = pathLength 100
   els.count.textContent = `Завершено помидоров: ${completed}`;
   document.title = `${text} · ${cfg.label}`;
@@ -110,13 +112,27 @@ function pause() {
 function reset() {
   clearInterval(tickId);
   tickId = null;
+  customColor = null;
   mode = 'work';
   remainingMs = MODES.work.seconds * 1000;
+  render();
+}
+
+// Случайный неоновый цвет: насыщенный и светлый, чтобы светился на тёмном фоне.
+// Оттенок каждый раз заметно отличается от предыдущего.
+let lastHue = null;
+function randomColor() {
+  let hue;
+  do hue = Math.floor(Math.random() * 360);
+  while (lastHue !== null && Math.abs(((hue - lastHue + 540) % 360) - 180) < 40);
+  lastHue = hue;
+  customColor = `hsl(${hue} 100% 60%)`;
   render();
 }
 
 els.start.addEventListener('click', start);
 els.pause.addEventListener('click', pause);
 els.reset.addEventListener('click', reset);
+els.color.addEventListener('click', randomColor);
 
 render();
